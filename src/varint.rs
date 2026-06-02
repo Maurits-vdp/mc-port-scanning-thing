@@ -31,22 +31,25 @@ pub fn tcp_read_var_int(tcp_stream: &mut TcpStream) -> (i32, usize) {
     return (value, byte_num);
 }
 
+//Check if this isn't messed up with siz starting index stuff
 pub fn write_var_int(value: i32) -> VarInt {
     let mut vout = VarInt{
         v: [0; 5],
-        siz: 0, //start at index 0, then use more bytes if needed.
+        siz: 1, //start at index 0, then use more bytes if needed.
     };
     let mut vcopy = value;
 
     let mut v_byte;
+    let mut index: usize = 0;
     loop {
         v_byte = (vcopy & 0x7F) as u8;
         vcopy >>= 7;
         if vcopy != 0 {
             v_byte |= 0x80; 
         }
-        vout.v[vout.siz] = v_byte;
+        vout.v[index] = v_byte;
         if vcopy == 0 { break; }
+        index += 1;
         vout.siz += 1;
     }
     return vout;
