@@ -1,4 +1,4 @@
-use std::net::{TcpStream, Shutdown, Ipv4Addr};
+use std::net::{TcpStream, Shutdown, Ipv4Addr, SocketAddrV4};
 use std::io::{Write, Read};
 use std::time::{Duration};
 use std::env;
@@ -11,22 +11,27 @@ fn main() {
     let mut config = config::Config::new(env::args()).unwrap();
     config.evaluate();
 
-    if config.ipv4 == None {println!("Failed to get starting IP"); }
-    else {println!("Start IP: {}", config.ipv4.clone().unwrap())}
+    let start_addr: [u8; 4] = match config.ipv4 {
+        None => {println!("Failed to get starting IP"); panic!("Failed to get starting IP");},
+        Some(_) => config.ipv4.unwrap(),
+    };
 
-    if config.end_ipv4 == None {println!("Failed to get starting IP"); }
-    else {println!("End IP: {}", config.end_ipv4.clone().unwrap()); }
+    //NOTE Add support for range flag so it actually does stuff
+    let end_addr: [u8; 4] = match config.end_ipv4 {
+        None => config.ipv4.unwrap(),
+        Some(_) => config.end_ipv4.unwrap(),
+    };
 
+    let diff_arr = config.diff_arr.clone().unwrap();
     for i in 0..4 {
-        println!("Diff arr: {}", config.diff_arr.clone().unwrap()[i]);
+        println!("diff array at {}: {}", i, diff_arr[i]);
     }
 
     //Just separating this for now so I can continue testing CLI stuff without actually pinging
-    
     if false {
         let port: u16 = 25565;
-        let address: String = config.ipv4.clone().expect("Must have IP address");
-        let mut tcp_stream = TcpStream::connect(format!("{}:{}", address, port)).unwrap();
+        let socket = SocketAddrV4::new(Ipv4Addr::new(start_addr[0], start_addr[1], start_addr[2], start_addr[3]), port);
+        let mut tcp_stream = TcpStream::connect(socket).unwrap();
 
         //timeout configuration
         tcp_stream.set_read_timeout(Some(Duration::new(5, 0))).expect("Failed to set read timeout duration");
@@ -34,7 +39,7 @@ fn main() {
         tcp_stream.set_ttl(100).expect("Failed to set write TTL duration");
 
         //handshake packet
-        let hs_packet = packet::Packet::handshake_packet(774, address.clone(), port.clone());
+        let hs_packet = packet::Packet::handshake_packet(774, start_addr.clone(), port.clone());
         tcp_stream.write_all(&hs_packet.data).unwrap();
 
         //status request packet
