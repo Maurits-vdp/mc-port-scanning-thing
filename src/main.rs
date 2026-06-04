@@ -1,7 +1,6 @@
 use std::net::{TcpStream, Shutdown, Ipv4Addr};
 use std::io::{Write, Read};
 use std::time::{Duration};
-use std::str;
 use std::env;
 
 mod varint;
@@ -23,9 +22,10 @@ fn main() {
     }
 
     //Just separating this for now so I can continue testing CLI stuff without actually pinging
+    
     if false {
         let port: u16 = 25565;
-        let address: String = config.ipv4.expect("Must have IP address").clone();
+        let address: String = config.ipv4.clone().expect("Must have IP address");
         let mut tcp_stream = TcpStream::connect(format!("{}:{}", address, port)).unwrap();
 
         //timeout configuration
@@ -51,7 +51,7 @@ fn main() {
         tcp_stream.read_exact(&mut string_data).unwrap();
         string_data.drain(0..byte_num);
         
-        let print_string = str::from_utf8(&string_data).unwrap();
+        let print_string = config.byte_to_utf8_conv(&string_data);
         println!("Print string: {}", print_string);
 
         tcp_stream.shutdown(Shutdown::Both).unwrap();

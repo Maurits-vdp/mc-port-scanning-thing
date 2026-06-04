@@ -10,6 +10,7 @@ pub struct Config {
     //flags
     pub help: Option<()>,
     pub range: Option<()>,
+    pub force: Option<()>,
 }
 
 impl Config {
@@ -25,8 +26,9 @@ impl Config {
         let mut end_ip: Option<String> = None;
 
         //flags
-        let mut h: Option<()> = None;
-        let mut r: Option<()> = None;
+        let mut help_flg: Option<()> = None;
+        let mut range_flg: Option<()> = None;
+        let mut force_flg: Option<()> = None;
 
         for arg in args {
             let valid_ip = arg.parse::<Ipv4Addr>().is_ok();
@@ -40,8 +42,9 @@ impl Config {
             }
 
             match arg.as_str() {
-                "-h" => h = Some(()), // Help flag
-                "-r" => r = Some(()), // Use IP Range flag: -r start_ip
+                "-h" => help_flg = Some(()), // Help flag
+                "-r" => range_flg = Some(()), // Use IP Range flag: -r start_ip
+                "-F" => force_flg = Some(()), // Force flag for forced client bound type conversion
                 _ => continue,
             }
         }
@@ -52,13 +55,15 @@ impl Config {
 
             diff_arr: None,
 
-            help: h,
-            range: r,
+            help: help_flg,
+            range: range_flg,
+            force: force_flg,
         })
     }
     pub fn evaluate<'a>(&'a mut self){
         self.handle_help_flag();
         self.handle_range_flag();
+        self.handle_force_flag();
     }
 
     fn handle_help_flag<'a>(&'a self){
@@ -98,6 +103,24 @@ impl Config {
                     diff_arr[i] = value;
                 }
                 self.diff_arr = Some(diff_arr);
+            }
+        }
+    }
+    fn handle_force_flag<'a>(&'a self){
+        match self.force {
+            None => return,
+            Some(()) => println!("Warning: using forceful conversion of client bound bytes to UTF8 string necessitates the use of an unsafe type conversion!"),
+        }
+    }
+    pub fn byte_to_utf8_conv<'a>(&'a self, data: &'a Vec<u8>) -> &'a str {
+        match self.force {
+            None => {
+                str::from_utf8(data).unwrap()
+            }
+            Some(()) => {
+                unsafe {
+                    str::from_utf8_unchecked(data)
+                }
             }
         }
     }
