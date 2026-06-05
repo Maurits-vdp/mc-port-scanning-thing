@@ -11,6 +11,9 @@ mc_port_scanner -h
 mc_port_scanner -r start_ip end_ip
     - Scan over a range of ip addresses starting from start_ip and ending at end_ip
 
-mc_port_scanner -F ...
+mc_port_scanner -F
     - Enable forceful conversion of client bound bytes to string
     - Note this uses unsafe rust type conversion!!
+
+mc_port_scanner -d delay
+    - Specify a delay in ms, between sending packets over a range of ips. The default delay is 100ms.
