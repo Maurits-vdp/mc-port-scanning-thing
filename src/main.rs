@@ -42,7 +42,8 @@ fn main() {
     for i in 0..iter_max{
         address = (start_addr_as_u32 + i).to_be_bytes(); 
         println!("Attempting to handshake: {}.{}.{}.{}", address[0], address[1], address[2], address[3]);
-        
+        std::thread::sleep(config.delay);
+
         //NOTE this is set to false so I don't accidentally start spamming a bunch of ip addresses
         //while I am testing stuff. In a proper setting this should be set to true 
         if false {

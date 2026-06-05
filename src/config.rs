@@ -1,9 +1,11 @@
 use crate::Ipv4Addr;
 use std::process::exit;
+use std::time::Duration;
 
 pub struct Config {
     pub ipv4: Option<[u8; 4]>,
     pub end_ipv4: Option<[u8; 4]>,
+    pub delay: Duration,
 
     pub diff_arr: Option<[u8; 4]>,
 
@@ -29,13 +31,14 @@ impl Config {
         args.next();
         let mut ip: Option<[u8; 4]> = None;
         let mut end_ip: Option<[u8; 4]> = None;
+        let mut delay: Duration = Duration::from_millis(100);
 
         //flags
         let mut help_flg: Option<()> = None;
         let mut range_flg: Option<()> = None;
         let mut force_flg: Option<()> = None;
 
-        for arg in args {
+        while let Some(arg) = args.next() {
             let valid_ip = arg.parse::<Ipv4Addr>().is_ok();
 
             if valid_ip & !ip.is_some() {
@@ -50,6 +53,11 @@ impl Config {
                 "-h" => help_flg = Some(()), // Help flag
                 "-r" => range_flg = Some(()), // Use IP Range flag: -r start_ip
                 "-F" => force_flg = Some(()), // Force flag for forced client bound type conversion
+                "-d" => delay = {
+                    let var = args.next().unwrap(); 
+                    println!("Setting delay: {}", var); 
+                    Duration::from_millis(var.parse::<u64>().unwrap())
+                },
                 _ => continue,
             }
         }
@@ -59,6 +67,7 @@ impl Config {
             end_ipv4: end_ip,
 
             diff_arr: None,
+            delay: delay,
 
             help: help_flg,
             range: range_flg,
@@ -75,15 +84,17 @@ impl Config {
         match self.help {
             None => {return; },
             Some(()) => {
-                println!("mc_port_scanner help:\n
-                    scan IP: executable ip_to_scan\n
-                    -h: help\n
-                    -r: specify IP range (-r start_ip end_ip): (e.g. -r 192.168.0.0 192.168.3.23)\n
-                    -F: Force UTF8 type conversion. (This forces rust to convert byte to string in an unsafe block)"); 
+                println!("mc_port_scanner help:
+                    [path to executable] [ip to scan]: Scan the provided IP on port 25565
+                    -h: help
+                    -r [start ip] [end_ip]: Specify IP range (-r start_ip end_ip): (e.g. -r 192.168.0.0 192.168.3.23)
+                    -F: Force UTF8 type conversion. (This forces rust to convert byte to string in an unsafe block)
+                    -d [delay]: Set a time in ms for the program to sleep before sending packets to the next IP. The default is 100 ms"); 
                 exit(0);
             },
         }
     }
+
     //Creates a differences in IP range array and assigns it.
     //This is used to iterate over multiple IP addresses later
     fn handle_range_flag<'a>(&'a mut self){
