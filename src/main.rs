@@ -39,7 +39,8 @@ fn main() {
     println!("Start address: {}.{}.{}.{}", start_addr[0], start_addr[1], start_addr[2], start_addr[3]);
     let start_addr_as_u32 = u32::from_be_bytes(start_addr);
 
-    for i in 0..iter_max{
+    // +1 because up to and including the last one
+    for i in 0..(iter_max+1){
         address = (start_addr_as_u32 + i).to_be_bytes(); 
         println!("Attempting to handshake: {}.{}.{}.{}", address[0], address[1], address[2], address[3]);
         std::thread::sleep(config.delay);
@@ -77,5 +78,7 @@ fn main() {
 
             tcp_stream.shutdown(Shutdown::Both).unwrap();
         }
+
+        config.halt_iter();
     }
 }

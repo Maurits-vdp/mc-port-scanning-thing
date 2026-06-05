@@ -13,6 +13,7 @@ pub struct Config {
     pub help: Option<()>,
     pub range: Option<()>,
     pub force: Option<()>,
+    pub halt_iter: Option<()>,
 }
 
 fn convert_ipstr_u8_arr(string: &str) -> [u8; 4]{
@@ -37,6 +38,7 @@ impl Config {
         let mut help_flg: Option<()> = None;
         let mut range_flg: Option<()> = None;
         let mut force_flg: Option<()> = None;
+        let mut halt_iter_flg: Option<()> = None;
 
         while let Some(arg) = args.next() {
             let valid_ip = arg.parse::<Ipv4Addr>().is_ok();
@@ -58,6 +60,7 @@ impl Config {
                     println!("Setting delay: {}", var); 
                     Duration::from_millis(var.parse::<u64>().unwrap())
                 },
+                "-S" => halt_iter_flg = Some(()),
                 _ => continue,
             }
         }
@@ -72,6 +75,7 @@ impl Config {
             help: help_flg,
             range: range_flg,
             force: force_flg,
+            halt_iter: halt_iter_flg,
         })
     }
     pub fn evaluate<'a>(&'a mut self){
@@ -85,11 +89,12 @@ impl Config {
             None => {return; },
             Some(()) => {
                 println!("mc_port_scanner help:
-                    [path to executable] [ip to scan]: Scan the provided IP on port 25565
-                    -h: help
-                    -r [start ip] [end_ip]: Specify IP range (-r start_ip end_ip): (e.g. -r 192.168.0.0 192.168.3.23)
-                    -F: Force UTF8 type conversion. (This forces rust to convert byte to string in an unsafe block)
-                    -d [delay]: Set a time in ms for the program to sleep before sending packets to the next IP. The default is 100 ms"); 
+                    [path to executable] [ip to scan]: Scan the provided IP on port 25565.
+                    -h: Help.
+                    -r [start ip] [end_ip]: Specify IP range from start up to and including the end ip (-r start_ip end_ip): (e.g. -r 192.168.0.0 192.168.3.23).
+                    -F: Force UTF8 type conversion. This forces rust to convert byte to string in an unsafe block.
+                    -d [delay]: Set a time in ms for the program to sleep before sending packets to the next IP. The default is 100 ms, the delay must fit a u64 variable.
+                    -S: Using this flag will make the program halt between iterations, querying the user to press enter before scanning the next address."); 
                 exit(0);
             },
         }
@@ -130,6 +135,16 @@ impl Config {
                 unsafe {
                     str::from_utf8_unchecked(data)
                 }
+            }
+        }
+    }
+    pub fn halt_iter(&self){
+        match self.halt_iter {
+            None => return, 
+            Some(()) => {
+                println!("Press enter to continue...");
+                std::io::stdin().read_line(&mut String::new()).unwrap();
+                return;
             }
         }
     }
